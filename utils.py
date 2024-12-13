@@ -1,7 +1,5 @@
 import nbformat
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
-from IPython.display import HTML, display
-from IPython.display import clear_output
 from nbconvert import HTMLExporter
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
