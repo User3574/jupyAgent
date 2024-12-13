@@ -34,7 +34,7 @@ with gr.Blocks() as demo:
     output = gr.HTML(label="Jupyter Notebook")
     
     generate_btn.click(
-        fn=combine_inputs,
+        fn=execute_jupyter_agent,
         inputs=[system_input, user_input],
         outputs=output
     )
