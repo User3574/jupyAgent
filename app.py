@@ -76,7 +76,7 @@ with gr.Blocks(css=css) as demo:
             minimum=128,
             maximum=2048,
             step=8,
-            interactive=False
+            interactive=True
         )
     
     generate_btn.click(
