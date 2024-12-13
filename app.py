@@ -50,7 +50,7 @@ with gr.Blocks(css=css) as demo:
     gr.Markdown("# HTML Generator")
     
     with gr.Row():
-        system_input = gr.Textbox(label="System prompt", default="Environment: ipython\n\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
+        system_input = gr.Textbox(label="System prompt", value="Environment: ipython\n\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
         user_input = gr.Textbox(label="User prompt", placeholder="What is 2+1? Use Python to solve.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
