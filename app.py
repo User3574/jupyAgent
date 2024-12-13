@@ -46,7 +46,17 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
 
 
 css = """
+#component-0 {
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
 .gradio-container {
+    height: 100vh !important;
+}
+
+.contain {
     height: 100vh !important;
 }
 """
