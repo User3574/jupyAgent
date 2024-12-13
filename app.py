@@ -1,34 +1,41 @@
 import gradio as gr
+from huggingface_hub import InferenceClient
+from e2b_code_interpreter import Sandbox
 
-def combine_inputs(title, content):
-    # Create a simple HTML template with the inputs
-    html = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #2c3e50;">{title}</h1>
-        <div style="background-color: #f7f9fc; padding: 15px; border-radius: 8px;">
-            <p style="line-height: 1.6;">{content}</p>
-        </div>
-        <footer style="margin-top: 20px; color: #7f8c8d; font-size: 0.9em;">
-            Generated with Gradio
-        </footer>
-    </div>
-    """
-    return html
+from .utils import run_interactive_notebook
+
+message_history = None
+
+def execute_jupyter_agent(sytem_prompt, user_input):
+    client = InferenceClient(api_key=HF_TOKEN)
+    max_new_tokens = 512
+    model = "meta-llama/Llama-3.1-8B-Instruct"
+
+    sbx = Sandbox(api_key=E2B_API_KEY)
+
+    messages = [
+        {"role": "system", "content": "Environment: ipython\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code."},
+        {"role": "user", "content": "What is 2+1? Use Python to solve."}
+    ]
+
+    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx):
+        message_history = messages
+        yield notebook_html
 
 # Create the interface
 with gr.Blocks() as demo:
     gr.Markdown("# HTML Generator")
     
     with gr.Row():
-        title_input = gr.Textbox(label="Title", placeholder="Enter your title here")
-        content_input = gr.Textbox(label="Content", placeholder="Enter your content here", lines=3)
+        system_input = gr.Textbox(label="System prompt", placeholder="Environment: ipython\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
+        user_input = gr.Textbox(label="User prompt", placeholder="What is 2+1? Use Python to solve.", lines=3)
     
-    generate_btn = gr.Button("Generate HTML")
-    output = gr.HTML(label="Generated HTML")
+    generate_btn = gr.Button("Let's go!")
+    output = gr.HTML(label="Jupyter Notebook")
     
     generate_btn.click(
         fn=combine_inputs,
-        inputs=[title_input, content_input],
+        inputs=[system_input, user_input],
         outputs=output
     )
 
