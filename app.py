@@ -1,3 +1,4 @@
+import os
 import gradio as gr
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
@@ -5,6 +6,10 @@ from e2b_code_interpreter import Sandbox
 from utils import run_interactive_notebook
 
 message_history = None
+
+E2B_API_KEY = os.environ['E2B_API_KEY']
+HF_TOKEN = os.environ['HF_TOKEN']
+
 
 def execute_jupyter_agent(sytem_prompt, user_input):
     client = InferenceClient(api_key=HF_TOKEN)
