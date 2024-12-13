@@ -9,7 +9,7 @@ message_history = None
 
 E2B_API_KEY = os.environ['E2B_API_KEY']
 HF_TOKEN = os.environ['HF_TOKEN']
-
+DEFAULT_MAX_TOKENS = 512
 DEFAULT_SYSTEM_PROMPT = """Environment: ipython
 
 You are a code assistant with access to a ipython interpreter.
