@@ -2,7 +2,7 @@ import gradio as gr
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
 
-from .utils import run_interactive_notebook
+from utils import run_interactive_notebook
 
 message_history = None
 
