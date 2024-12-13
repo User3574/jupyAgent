@@ -66,7 +66,6 @@ with gr.Blocks(css=css) as demo:
         system_input = gr.Textbox(
             label="System Prompt",
             value=DEFAULT_SYSTEM_PROMPT,
-            lines=4,
             elem_classes="input-box"
         )
 
