@@ -27,12 +27,30 @@ def execute_jupyter_agent(sytem_prompt, user_input):
         message_history = messages
         yield notebook_html
 
+
+css = """
+#component-0 {
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.gradio-container {
+    height: 100vh !important;
+}
+
+.contain {
+    height: 100vh !important;
+}
+"""
+
+
 # Create the interface
-with gr.Blocks() as demo:
+with gr.Blocks(css=css) as demo:
     gr.Markdown("# HTML Generator")
     
     with gr.Row():
-        system_input = gr.Textbox(label="System prompt", placeholder="Environment: ipython\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
+        system_input = gr.Textbox(label="System prompt", default="Environment: ipython\n\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
         user_input = gr.Textbox(label="User prompt", placeholder="What is 2+1? Use Python to solve.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
