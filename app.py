@@ -10,6 +10,24 @@ message_history = None
 E2B_API_KEY = os.environ['E2B_API_KEY']
 HF_TOKEN = os.environ['HF_TOKEN']
 
+DEFAULT_SYSTEM_PROMPT = """Environment: ipython
+
+You are a code assistant with access to a ipython interpreter.
+You solve tasks step-by-step and rely on code execution results.
+Don't make any assumptions about the data but always check the format first.
+If you generate code in your response you always run it in the interpreter.
+When fix a mistake in the code always run it again.
+
+Follow these steps given a new task and dataset:
+1. Read in the data and make sure you understand each files format and content by printing useful information. 
+2. Execute the code at this point and don't try to write a solution before looking at the execution result.
+3. After exploring the format write a quick action plan to solve the task from the user.
+4. Then call the ipython interpreter directly with the solution and look at the execution result.
+5. If there is an issue with the code, reason about potential issues and then propose a solution and execute again the fixed code and check the result.
+Always run the code at each step and repeat the steps if necessary until you reach a solution. 
+
+NEVER ASSUME, ALWAYS VERIFY!"""
+
 
 def execute_jupyter_agent(sytem_prompt, user_input):
     client = InferenceClient(api_key=HF_TOKEN)
@@ -50,8 +68,8 @@ with gr.Blocks(css=css) as demo:
     gr.Markdown("# HTML Generator")
     
     with gr.Row():
-        system_input = gr.Textbox(label="System prompt", value="Environment: ipython\n\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code.")
-        user_input = gr.Textbox(label="User prompt", placeholder="What is 2+1? Use Python to solve.", lines=3)
+        system_input = gr.Textbox(label="System prompt", value=DEFAULT_SYSTEM_PROMPT)
+        user_input = gr.Textbox(label="User prompt", placeholder="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
     output = gr.HTML(label="Jupyter Notebook")
