@@ -19,8 +19,8 @@ def execute_jupyter_agent(sytem_prompt, user_input):
     sbx = Sandbox(api_key=E2B_API_KEY)
 
     messages = [
-        {"role": "system", "content": "Environment: ipython\nYou are a helpful coding assistant. Always first explain what you are going to do before writing code."},
-        {"role": "user", "content": "What is 2+1? Use Python to solve."}
+        {"role": "system", "content": sytem_prompt},
+        {"role": "user", "content": user_input}
     ]
 
     for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx):
