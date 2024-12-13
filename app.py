@@ -29,9 +29,8 @@ Always run the code at each step and repeat the steps if necessary until you rea
 NEVER ASSUME, ALWAYS VERIFY!"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input):
+def execute_jupyter_agent(sytem_prompt, user_input, max_tokens):
     client = InferenceClient(api_key=HF_TOKEN)
-    max_new_tokens = 512
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
@@ -41,7 +40,7 @@ def execute_jupyter_agent(sytem_prompt, user_input):
         {"role": "user", "content": user_input}
     ]
 
-    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx):
+    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx, max_tokens):
         message_history = messages
         yield notebook_html
 
@@ -65,18 +64,34 @@ css = """
 
 # Create the interface
 with gr.Blocks(css=css) as demo:
-    gr.Markdown("# HTML Generator")
+    gr.Markdown("# Jupyter Agent!")
     
     with gr.Row():
-        system_input = gr.Textbox(label="System prompt", value=DEFAULT_SYSTEM_PROMPT)
         user_input = gr.Textbox(label="User prompt", placeholder="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
     output = gr.HTML(label="Jupyter Notebook")
+
+    with gr.Accordion("Advanced Settings", open=False):
+        system_input = gr.Textbox(
+            label="System Prompt",
+            value=DEFAULT_SYSTEM_PROMPT,
+            lines=4,
+            elem_classes="input-box"
+        )
+
+        max_tokens = gr.Number(
+            label="Max New Tokens",
+            value=DEFAULT_MAX_TOKENS,
+            minimum=128,
+            maximum=2048,
+            step=8,
+            interactive=False
+        )
     
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input],
+        inputs=[system_input, user_input, max_tokens],
         outputs=output
     )
 
