@@ -29,7 +29,7 @@ Always run the code at each step and repeat the steps if necessary until you rea
 NEVER ASSUME, ALWAYS VERIFY!"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input, max_tokens):
+def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
     client = InferenceClient(api_key=HF_TOKEN)
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
@@ -40,7 +40,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_tokens):
         {"role": "user", "content": user_input}
     ]
 
-    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx, max_tokens):
+    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx, max_new_tokens=max_new_tokens):
         message_history = messages
         yield notebook_html
 
