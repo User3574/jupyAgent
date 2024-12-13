@@ -46,17 +46,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
 
 
 css = """
-#component-0 {
-    height: 100vh;
-    overflow-y: auto;
-    padding: 20px;
-}
-
 .gradio-container {
-    height: 100vh !important;
-}
-
-.contain {
     height: 100vh !important;
 }
 """
@@ -67,7 +57,7 @@ with gr.Blocks(css=css) as demo:
     gr.Markdown("# Jupyter Agent!")
     
     with gr.Row():
-        user_input = gr.Textbox(label="User prompt", placeholder="Solve the Lotka-Volterra equation and plot the results.", lines=3)
+        user_input = gr.Textbox(label="User prompt", value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
     output = gr.HTML(label="Jupyter Notebook")
