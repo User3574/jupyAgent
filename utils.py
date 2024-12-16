@@ -218,7 +218,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
         
         #code_cell_counter = 0
         while True:
-            response_stream = client.chat.completions.create(
+            response_stream = client.text_generation(
                 model=model,
                 messages=model_input,
                 details=True,
