@@ -210,15 +210,15 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
     print("Start!")
     notebook_data, code_cell_counter = create_base_notebook(messages)
     try:
-        input_tokens = tokenizer.apply_chat_template(
-            messages, 
-            builtin_tools=["code_interpreter"], 
-            add_generation_prompt=True
-        )
-        model_input = tokenizer.decode(input_tokens)
-        
         #code_cell_counter = 0
         while True:
+            input_tokens = tokenizer.apply_chat_template(
+                messages, 
+                builtin_tools=["code_interpreter"], 
+                add_generation_prompt=True
+            )
+            model_input = tokenizer.decode(input_tokens)
+            
             response_stream = client.text_generation(
                 model=model,
                 prompt=model_input,
