@@ -28,9 +28,9 @@ Always run the code at each step and repeat the steps if necessary until you rea
 NEVER ASSUME, ALWAYS VERIFY!"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, message_history):
+def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model, message_history):
     client = InferenceClient(api_key=HF_TOKEN)
-    model = "meta-llama/Llama-3.1-8B-Instruct"
+    #model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
     
@@ -86,10 +86,11 @@ with gr.Blocks(css=css) as demo:
             step=8,
             interactive=True
         )
+        model = gr.Dropdown(choices=["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"])
     
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, gr.State(value=[])],
+        inputs=[system_input, user_input, max_tokens, model, gr.State(value=[])],
         outputs=[html_output,  gr.State()]
     )
 
