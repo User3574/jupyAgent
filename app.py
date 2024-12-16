@@ -86,7 +86,11 @@ with gr.Blocks(css=css) as demo:
             step=8,
             interactive=True
         )
-        model = gr.Dropdown(choices=["meta-llama/Llama-3.1-8B-Instruct", "meta-llama/Llama-3.1-70B-Instruct"])
+        model = gr.Dropdown(choices=[
+            "meta-llama/Llama-3.2-3B-Instruct",
+            "meta-llama/Llama-3.1-8B-Instruct", 
+            "meta-llama/Llama-3.1-70B-Instruct"]
+                           )
     
     generate_btn.click(
         fn=execute_jupyter_agent,
