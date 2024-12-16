@@ -3,6 +3,7 @@ import gradio as gr
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
 from pathlib import Path
+from transformers import AutoTokenizer
 
 from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
@@ -32,6 +33,8 @@ List of available files:
 
 def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files, message_history):
     client = InferenceClient(api_key=HF_TOKEN)
+
+    tokenizer = AutoTokenizer.from_pretrained(model)
     #model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
@@ -54,7 +57,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
 
     print("history:", message_history)
 
-    for notebook_html, messages in run_interactive_notebook(client, model, message_history, sbx, max_new_tokens=max_new_tokens):
+    for notebook_html, messages in run_interactive_notebook(client, model, tokenizer, message_history, sbx, max_new_tokens=max_new_tokens):
         message_history = messages
         yield notebook_html, message_history
 
