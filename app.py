@@ -34,14 +34,17 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
+    
+    if message_history = None:
+        message_history = [
+            {"role": "system", "content": sytem_prompt},
+            {"role": "user", "content": user_input}
+        ]
+    else:
+        message_history.append({"role": "user", "content": user_input})
+        
 
-    messages = [
-        {"role": "system", "content": sytem_prompt},
-        {"role": "user", "content": user_input}
-    ]
-
-    for notebook_html, messages in run_interactive_notebook(client, model, messages, sbx, max_new_tokens=max_new_tokens):
-        message_history = messages
+    for notebook_html, message_history in run_interactive_notebook(client, model, messages, sbx, max_new_tokens=max_new_tokens):
         yield notebook_html
 
 
