@@ -68,7 +68,7 @@ css = """
 
 
 # Create the interface
-with gr.Blocks() as demo:
+with gr.Blocks(css=css) as demo:
     state = gr.State(value=[])
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
     with gr.Row():
