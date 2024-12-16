@@ -28,11 +28,17 @@ Always run the code at each step and repeat the steps if necessary until you rea
 NEVER ASSUME, ALWAYS VERIFY!"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model, message_history):
+def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files, message_history):
     client = InferenceClient(api_key=HF_TOKEN)
     #model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
+
+    for filepath in files:
+        with open(filepath, "rb") as file:
+            print(f"uploading {filepath}...")
+            # Upload file to sandbox
+        	sbx.files.write(filepath, file)
     
     # Initialize message_history if it doesn't exist
     if len(message_history)==0:
@@ -74,7 +80,7 @@ with gr.Blocks(css=css) as demo:
     with gr.Row():
         user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     with gr.Row():
-        gr.File(label="Upload files to use", file_count="multiple")
+        files = gr.File(label="Upload files to use", file_count="multiple")
     with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
@@ -104,7 +110,7 @@ with gr.Blocks(css=css) as demo:
         
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, model, state],
+        inputs=[system_input, user_input, max_tokens, model, files, state],
         outputs=[html_output,  state]
     )
 
