@@ -142,7 +142,7 @@ def create_base_notebook(messages):
                 "source": text
                 })
 
-        elif message["role"] == "assistant" and "tool_call" in message:
+        elif message["role"] == "assistant" and "tool_calls" in message:
             base_notebook["cells"].append({
                 "cell_type": "code",
                 "execution_count": None,
@@ -156,7 +156,7 @@ def create_base_notebook(messages):
             base_notebook["cells"][-1]["outputs"].append(message["content"])
             base_notebook["cells"][-1]["execution_count"] = code_cell_counter
 
-        elif message["role"] == "assistant" and "tool_call" not in message:
+        elif message["role"] == "assistant" and "tool_calls" not in message:
             base_notebook["cells"].append({
                 "cell_type": "markdown",
                 "metadata": {},
