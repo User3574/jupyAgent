@@ -5,6 +5,7 @@ from e2b_code_interpreter import Sandbox
 
 from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
+
 message_history = None
 
 E2B_API_KEY = os.environ['E2B_API_KEY']
@@ -34,7 +35,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
-    
+    print("history", message_history)
     if message_history is None:
         message_history = [
             {"role": "system", "content": sytem_prompt},
