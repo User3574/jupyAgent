@@ -40,13 +40,13 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
     sbx = Sandbox(api_key=E2B_API_KEY)
 
     filenames = []
-    
-    for filepath in files:
-        filpath = Path(filepath)
-        with open(filepath, "rb") as file:
-            print(f"uploading {filepath}...")
-            sbx.files.write(filpath.name, file)
-            filenames.append(filpath.name)
+    if files is not None:
+        for filepath in files:
+            filpath = Path(filepath)
+            with open(filepath, "rb") as file:
+                print(f"uploading {filepath}...")
+                sbx.files.write(filpath.name, file)
+                filenames.append(filpath.name)
 
 
     
