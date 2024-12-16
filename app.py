@@ -6,7 +6,7 @@ from e2b_code_interpreter import Sandbox
 from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
 
-message_history = None
+message_history = []
 
 E2B_API_KEY = os.environ['E2B_API_KEY']
 HF_TOKEN = os.environ['HF_TOKEN']
