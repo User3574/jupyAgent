@@ -76,27 +76,28 @@ with gr.Blocks(css=css) as demo:
     with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
-
-    with gr.Accordion("Advanced Settings", open=False):
-        system_input = gr.Textbox(
-            label="System Prompt",
-            value=DEFAULT_SYSTEM_PROMPT,
-            elem_classes="input-box"
-        )
-
-        max_tokens = gr.Number(
-            label="Max New Tokens",
-            value=DEFAULT_MAX_TOKENS,
-            minimum=128,
-            maximum=2048,
-            step=8,
-            interactive=True
-        )
-        model = gr.Dropdown(choices=[
-            "meta-llama/Llama-3.2-3B-Instruct",
-            "meta-llama/Llama-3.1-8B-Instruct", 
-            "meta-llama/Llama-3.1-70B-Instruct"]
-                           )
+    with gr.Row():
+        with gr.Accordion("Advanced Settings", open=False):
+            system_input = gr.Textbox(
+                label="System Prompt",
+                value=DEFAULT_SYSTEM_PROMPT,
+                elem_classes="input-box"
+            )
+    
+            max_tokens = gr.Number(
+                label="Max New Tokens",
+                value=DEFAULT_MAX_TOKENS,
+                minimum=128,
+                maximum=2048,
+                step=8,
+                interactive=True
+            )
+            
+            model = gr.Dropdown(choices=[
+                "meta-llama/Llama-3.2-3B-Instruct",
+                "meta-llama/Llama-3.1-8B-Instruct", 
+                "meta-llama/Llama-3.1-70B-Instruct"]
+                               )
     
     generate_btn.click(
         fn=execute_jupyter_agent,
