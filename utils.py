@@ -226,7 +226,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
                 stream=True,
                 do_sample=True,
                 repetition_penalty=1.1,
-                temperature=0.8
+                temperature=0.8,
                 max_new_tokens=max_new_tokens,
             )
             
