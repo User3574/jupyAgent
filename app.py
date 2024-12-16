@@ -48,7 +48,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model, messa
 
 def clear(state):
     state = []
-    return update_notebook_display(create_base_notebook([])), state
+    return update_notebook_display(create_base_notebook([])[0]), state
 
 css = """
 #component-0 {
@@ -70,7 +70,7 @@ css = """
 # Create the interface
 with gr.Blocks(css=css) as demo:
     state = gr.State(value=[])
-    html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])))
+    html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
     with gr.Row():
         user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     with gr.Row():
