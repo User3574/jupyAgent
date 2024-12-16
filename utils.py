@@ -207,6 +207,7 @@ def update_notebook_display(notebook_data):
     return notebook_body
 
 def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
+    print("Start!")
     notebook_data, code_cell_counter = create_base_notebook(messages)
     try:
         input_tokens = tokenizer.apply_chat_template(
@@ -267,7 +268,9 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
                 if i%16 == 0:
                     yield update_notebook_display(notebook_data), messages
             yield update_notebook_display(notebook_data), messages
-            
+
+
+            print(f"last_tokens: {'|'.join(tokens[-1])}")
             # Handle code execution
             if code_cell:
                 notebook_data["cells"][-1]["execution_count"] = code_cell_counter
