@@ -206,30 +206,37 @@ def update_notebook_display(notebook_data):
     notebook_body, _ = html_exporter.from_notebook_node(notebook)
     return notebook_body
 
-def run_interactive_notebook(client, model, messages, sbx, max_new_tokens=512):
+def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
     notebook_data, code_cell_counter = create_base_notebook(messages)
     try:
+        input_tokens = tokenizer.apply_chat_template(
+            messages, 
+            builtin_tools=["code_interpreter"], 
+            add_generation_prompt=True
+        )
+        model_input = tokenizer.decode(input_tokens)
+        
         #code_cell_counter = 0
         while True:
             response_stream = client.chat.completions.create(
                 model=model,
-                messages=messages,
-                logprobs=True,
+                messages=model_input,
+                details=True,
                 stream=True,
                 max_tokens=max_new_tokens,
             )
             
             assistant_response = ""
             tokens = []
-            current_cell_content = []
             
             code_cell = False
             for i, chunk in enumerate(response_stream):
-                
-                content = chunk.choices[0].delta.content
-                tokens.append(chunk.choices[0].logprobs.content[0].token)
+                if not chunk.token.special:
+                    content = chunk.token.text
+                else:
+                    content = ""
+                tokens.append(chunk.token.text)                
                 assistant_response += content
-                current_cell_content.append(content)
 
                 if len(tokens)==1:
                     create_cell=True
@@ -257,7 +264,7 @@ def run_interactive_notebook(client, model, messages, sbx, max_new_tokens=512):
                         })
                 else:
                     notebook_data["cells"][-1]["source"] = assistant_response
-                if i%8 == 0:
+                if i%16 == 0:
                     yield update_notebook_display(notebook_data), messages
             yield update_notebook_display(notebook_data), messages
             
