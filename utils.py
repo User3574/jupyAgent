@@ -223,7 +223,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
                 prompt=model_input,
                 details=True,
                 stream=True,
-                max_tokens=max_new_tokens,
+                max_new_tokens=max_new_tokens,
             )
             
             assistant_response = ""
