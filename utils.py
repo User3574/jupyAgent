@@ -270,7 +270,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
             yield update_notebook_display(notebook_data), messages
 
 
-            print(f"last_tokens: {'|'.join(tokens[-10:])}")
+            print(f"last_tokens: {'|'.join(tokens[-10:])}, n_msg: {len(messages)}")
             # Handle code execution
             if code_cell:
                 notebook_data["cells"][-1]["execution_count"] = code_cell_counter
