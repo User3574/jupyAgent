@@ -71,9 +71,17 @@ def parse_exec_result_nb(execution):
     return outputs
 
 
-system_template = """<div class="alert alert-block alert-info">
-<b>System:</b> {}
-</div>
+system_template = """\
+<details>
+  <summary>
+    <div class="alert alert-block alert-info">
+      <b>System:</b>
+    </div>
+  </summary>
+  <div class="alert alert-block alert-info">
+    {}
+  </div>
+</details>
 """
 
 user_template = """<div class="alert alert-block alert-success">
@@ -115,19 +123,50 @@ def create_base_notebook(messages):
                             "source": "",
                             "outputs": []
                         })
-    
+
+    code_cell_counter = 0
     
     for message in messages:
         if message["role"] == "system":
             text = system_template.format(message["content"].replace('\n', '<br>'))
+            base_notebook["cells"].append({
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": text
+                })
         elif message["role"] == "user":
-            text = user_template.format(message["content"])
-        base_notebook["cells"].append({
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": text
+            text = user_template.format(message["content"].replace('\n', '<br>'))
+            base_notebook["cells"].append({
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": text
+                })
+
+        elif message["role"] == "assistant" and "tool_call" in message:
+            base_notebook["cells"].append({
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "source": message["content"],
+                "outputs": []
             })
-    return base_notebook
+
+        elif message["role"] == "ipython":
+            code_cell_counter +=1
+            base_notebook["cells"][-1]["outputs"].append(message["content"])
+            base_notebook["cells"][-1]["execution_count"] = code_cell_counter
+
+        elif message["role"] == "assistant" and "tool_call" not in message:
+            base_notebook["cells"].append({
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": message["content"]
+            })
+            
+        else:
+            raise ValueError(message)
+        
+    return base_notebook, code_cell_counter
 
 def execute_code(sbx, code):
     execution = sbx.run_code(code, on_stdout=lambda data: print('stdout:', data))
@@ -158,9 +197,9 @@ def update_notebook_display(notebook_data):
     return notebook_body
 
 def run_interactive_notebook(client, model, messages, sbx, max_new_tokens=512):
-    notebook_data = create_base_notebook(messages)
+    notebook_data, code_cell_counter = create_base_notebook(messages)
     try:
-        code_cell_counter = 0
+        #code_cell_counter = 0
         while True:
             response_stream = client.chat.completions.create(
                 model=model,
