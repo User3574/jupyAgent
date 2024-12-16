@@ -35,7 +35,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
 
     sbx = Sandbox(api_key=E2B_API_KEY)
     
-    if message_history = None:
+    if message_history is None:
         message_history = [
             {"role": "system", "content": sytem_prompt},
             {"role": "user", "content": user_input}
