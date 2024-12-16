@@ -6,8 +6,6 @@ from e2b_code_interpreter import Sandbox
 from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
 
-message_history = []
-
 E2B_API_KEY = os.environ['E2B_API_KEY']
 HF_TOKEN = os.environ['HF_TOKEN']
 DEFAULT_MAX_TOKENS = 512
@@ -31,19 +29,23 @@ NEVER ASSUME, ALWAYS VERIFY!"""
 
 
 def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
+    global message_history
     client = InferenceClient(api_key=HF_TOKEN)
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
-    print("history", message_history)
-    if message_history is None:
-        message_history = [
+    
+    # Initialize message_history if it doesn't exist
+    if not hasattr(execute_jupyter_agent, 'message_history'):
+        execute_jupyter_agent.message_history = [
             {"role": "system", "content": sytem_prompt},
             {"role": "user", "content": user_input}
         ]
     else:
-        message_history.append({"role": "user", "content": user_input})
-        
+        execute_jupyter_agent.message_history.append({"role": "user", "content": user_input})
+    
+    print("history", execute_jupyter_agent.message_history)
+
 
     for notebook_html, message_history in run_interactive_notebook(client, model, messages, sbx, max_new_tokens=max_new_tokens):
         yield notebook_html
