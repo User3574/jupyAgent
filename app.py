@@ -28,28 +28,20 @@ Always run the code at each step and repeat the steps if necessary until you rea
 NEVER ASSUME, ALWAYS VERIFY!"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
-    global message_history
+def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, message_history):
     client = InferenceClient(api_key=HF_TOKEN)
     model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
     
     # Initialize message_history if it doesn't exist
-    if not hasattr(execute_jupyter_agent, 'message_history'):
-        execute_jupyter_agent.message_history = [
-            {"role": "system", "content": sytem_prompt},
-            {"role": "user", "content": user_input}
-        ]
-    else:
-        execute_jupyter_agent.message_history.append({"role": "user", "content": user_input})
-    
-    print("history", execute_jupyter_agent.message_history)
+    if len(message_history)==0:
+        message_history.append({"role": "system", "content": sytem_prompt})
+    message_history.append({"role": "user", "content": user_input})
 
-
-    for notebook_html, message_history in run_interactive_notebook(client, model, execute_jupyter_agent.message_history, sbx, max_new_tokens=max_new_tokens):
-        execute_jupyter_agent.message_history = message_history
-        yield notebook_html
+    for notebook_html, messages in run_interactive_notebook(client, model, message_history, sbx, max_new_tokens=max_new_tokens):
+        message_history = messages
+        yield notebook_html, message_history
 
 
 css = """
@@ -71,7 +63,7 @@ css = """
 
 # Create the interface
 with gr.Blocks(css=css) as demo:
-    output = gr.HTML(value=update_notebook_display(create_base_notebook([])))
+    html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])))
     with gr.Row():
         user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     
@@ -95,8 +87,8 @@ with gr.Blocks(css=css) as demo:
     
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens],
-        outputs=output
+        inputs=[system_input, user_input, max_tokens, gr.State(value=[])],
+        outputs=[html_output,  gr.State()]
     )
 
 demo.launch()
