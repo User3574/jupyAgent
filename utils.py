@@ -220,7 +220,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
         while True:
             response_stream = client.text_generation(
                 model=model,
-                messages=model_input,
+                prompt=model_input,
                 details=True,
                 stream=True,
                 max_tokens=max_new_tokens,
