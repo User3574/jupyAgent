@@ -72,16 +72,7 @@ def parse_exec_result_nb(execution):
 
 
 system_template = """\
-<style>
-details > summary .arrow {
-  display: inline-block;
-  transition: transform 0.2s;
-}
-details[open] > summary .arrow {
-  transform: rotate(90deg);
-}
-</style>
-
+system_template = '''
 <details>
   <summary style="display: flex; align-items: center;">
     <div class="alert alert-block alert-info" style="margin: 0; width: 100%;">
@@ -92,6 +83,16 @@ details[open] > summary .arrow {
     {}
   </div>
 </details>
+
+<style>
+details > summary .arrow {{
+  display: inline-block;
+  transition: transform 0.2s;
+}}
+details[open] > summary .arrow {{
+  transform: rotate(90deg);
+}}
+</style>
 """
 
 user_template = """<div class="alert alert-block alert-success">
