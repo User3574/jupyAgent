@@ -46,6 +46,10 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model, messa
         yield notebook_html, message_history
 
 
+def clear(state):
+    state = []
+    return update_notebook_display(create_base_notebook([])), state
+
 css = """
 #component-0 {
     height: 100vh;
@@ -65,11 +69,13 @@ css = """
 
 # Create the interface
 with gr.Blocks(css=css) as demo:
+    state = gr.State(value=[])
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])))
     with gr.Row():
         user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
-    
-    generate_btn = gr.Button("Let's go!")
+    with gr.Row():
+        generate_btn = gr.Button("Let's go!")
+        clear_btn = gr.Button("Clear")
 
     with gr.Accordion("Advanced Settings", open=False):
         system_input = gr.Textbox(
@@ -94,8 +100,14 @@ with gr.Blocks(css=css) as demo:
     
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, model, gr.State(value=[])],
-        outputs=[html_output,  gr.State()]
+        inputs=[system_input, user_input, max_tokens, model, state)],
+        outputs=[html_output,  state]
+    )
+
+    clear_btn.click(
+        fn=clear,
+        inputs=[state],
+        outputs=[html_output,  state]
     )
 
 demo.launch()
