@@ -74,6 +74,8 @@ with gr.Blocks(css=css) as demo:
     with gr.Row():
         user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     with gr.Row():
+        gr.File(label="Upload files to use", file_count="multiple")
+    with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
     with gr.Row():
