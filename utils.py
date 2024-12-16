@@ -153,7 +153,7 @@ def create_base_notebook(messages):
 
         elif message["role"] == "ipython":
             code_cell_counter +=1
-            base_notebook["cells"][-1]["outputs"].append(message["nbformat"])
+            base_notebook["cells"][-1]["outputs"] = message["nbformat"]
             base_notebook["cells"][-1]["execution_count"] = code_cell_counter
 
         elif message["role"] == "assistant" and "tool_calls" not in message:
