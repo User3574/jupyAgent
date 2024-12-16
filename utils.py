@@ -72,7 +72,6 @@ def parse_exec_result_nb(execution):
 
 
 system_template = """\
-system_template = '''
 <details>
   <summary style="display: flex; align-items: center;">
     <div class="alert alert-block alert-info" style="margin: 0; width: 100%;">
