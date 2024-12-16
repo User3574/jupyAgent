@@ -10,9 +10,7 @@ from utils import run_interactive_notebook, create_base_notebook, update_noteboo
 E2B_API_KEY = os.environ['E2B_API_KEY']
 HF_TOKEN = os.environ['HF_TOKEN']
 DEFAULT_MAX_TOKENS = 512
-DEFAULT_SYSTEM_PROMPT = """Environment: ipython
-
-You are a code assistant with access to a ipython interpreter.
+DEFAULT_SYSTEM_PROMPT = """You are a code assistant with access to a ipython interpreter.
 You solve tasks step-by-step and rely on code execution results.
 Don't make any assumptions about the data but always check the format first.
 If you generate code in your response you always run it in the interpreter.
@@ -83,7 +81,7 @@ css = """
 
 
 # Create the interface
-with gr.Blocks() as demo:
+with gr.Blocks(css=css) as demo:
     state = gr.State(value=[])
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
     with gr.Row():
