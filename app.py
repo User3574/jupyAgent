@@ -47,7 +47,8 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens):
     print("history", execute_jupyter_agent.message_history)
 
 
-    for notebook_html, message_history in run_interactive_notebook(client, model, messages, sbx, max_new_tokens=max_new_tokens):
+    for notebook_html, message_history in run_interactive_notebook(client, model, execute_jupyter_agent.message_history, sbx, max_new_tokens=max_new_tokens):
+        execute_jupyter_agent.message_history = message_history
         yield notebook_html
 
 
