@@ -3,7 +3,7 @@ import gradio as gr
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
 
-from utils import run_interactive_notebook
+from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
 message_history = None
 
@@ -64,13 +64,11 @@ css = """
 
 # Create the interface
 with gr.Blocks(css=css) as demo:
-    gr.Markdown("# Jupyter Agent!")
-    
+    output = gr.HTML(value=update_notebook_display(create_base_notebook([])))
     with gr.Row():
-        user_input = gr.Textbox(label="User prompt", value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
+        user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
     
     generate_btn = gr.Button("Let's go!")
-    output = gr.HTML(label="Jupyter Notebook")
 
     with gr.Accordion("Advanced Settings", open=False):
         system_input = gr.Textbox(
