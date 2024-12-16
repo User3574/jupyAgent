@@ -153,7 +153,7 @@ def create_base_notebook(messages):
 
         elif message["role"] == "ipython":
             code_cell_counter +=1
-            base_notebook["cells"][-1]["outputs"].append(message["content"])
+            base_notebook["cells"][-1]["outputs"].append(message["nbformat"])
             base_notebook["cells"][-1]["execution_count"] = code_cell_counter
 
         elif message["role"] == "assistant" and "tool_calls" not in message:
@@ -268,7 +268,7 @@ def run_interactive_notebook(client, model, messages, sbx, max_new_tokens=512):
                         }
                     }]
                 })
-                messages.append({"role": "ipython", "content": parse_exec_result_llm(execution)})
+                messages.append({"role": "ipython", "content": parse_exec_result_llm(execution), "nbformat": parse_exec_result_nb(execution)})
                 
                 # Update the last code cell with execution results
                 notebook_data["cells"][-1]["outputs"] = parse_exec_result_nb(execution)
