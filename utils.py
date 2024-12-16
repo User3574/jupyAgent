@@ -106,6 +106,17 @@ def create_base_notebook(messages):
             "metadata": {},
             "source": header_message
             })
+
+    if len(messages)==0:
+        base_notebook["cells"].append({
+                            "cell_type": "code",
+                            "execution_count": None,
+                            "metadata": {},
+                            "source": "",
+                            "outputs": []
+                        })
+    
+    
     for message in messages:
         if message["role"] == "system":
             text = system_template.format(message["content"].replace('\n', '<br>'))
