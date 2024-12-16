@@ -100,7 +100,7 @@ with gr.Blocks(css=css) as demo:
     
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, model, state)],
+        inputs=[system_input, user_input, max_tokens, model, state],
         outputs=[html_output,  state]
     )
 
