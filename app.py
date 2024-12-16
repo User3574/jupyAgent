@@ -2,6 +2,7 @@ import os
 import gradio as gr
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
+from pathlib import Path
 
 from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
 
@@ -25,7 +26,10 @@ Follow these steps given a new task and dataset:
 5. If there is an issue with the code, reason about potential issues and then propose a solution and execute again the fixed code and check the result.
 Always run the code at each step and repeat the steps if necessary until you reach a solution. 
 
-NEVER ASSUME, ALWAYS VERIFY!"""
+NEVER ASSUME, ALWAYS VERIFY!
+
+List of available files:
+{}"""
 
 
 def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files, message_history):
@@ -34,14 +38,20 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
 
     sbx = Sandbox(api_key=E2B_API_KEY)
 
+    filenames = []
+    
     for filepath in files:
+        filpath = Path(filepath)
         with open(filepath, "rb") as file:
             print(f"uploading {filepath}...")
-            sbx.files.write(filepath, file)
+            sbx.files.write(filpath.name, file)
+            filenames.append(filpath.name)
 
+
+    
     # Initialize message_history if it doesn't exist
     if len(message_history)==0:
-        message_history.append({"role": "system", "content": sytem_prompt})
+        message_history.append({"role": "system", "content": sytem_prompt.format("- " + "\n- ".join(filenames))})
     message_history.append({"role": "user", "content": user_input})
 
     print("history:", message_history)
