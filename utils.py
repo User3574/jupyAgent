@@ -81,6 +81,13 @@ user_template = """<div class="alert alert-block alert-success">
 </div>
 """
 
+header_message = """<p align="center">
+  <img src="https://huggingface.co/spaces/lvwerra/jupyter-agent/resolve/main/jupyter-agent.png" />
+</p>
+
+
+<p style="text-align:center;">Let a LLM agent write and execute code inside a notebook!</p>"""
+
 def create_base_notebook(messages):
     base_notebook = {
         "metadata": {
@@ -94,7 +101,11 @@ def create_base_notebook(messages):
         "nbformat_minor": 0,
         "cells": []
     }
-
+    base_notebook["cells"].append({
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": header_message
+            })
     for message in messages:
         if message["role"] == "system":
             text = system_template.format(message["content"].replace('\n', '<br>'))
