@@ -37,9 +37,8 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
     for filepath in files:
         with open(filepath, "rb") as file:
             print(f"uploading {filepath}...")
-            # Upload file to sandbox
-        	sbx.files.write(filepath, file)
-    
+            sbx.files.write(filepath, file)
+
     # Initialize message_history if it doesn't exist
     if len(message_history)==0:
         message_history.append({"role": "system", "content": sytem_prompt})
