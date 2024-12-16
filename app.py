@@ -39,6 +39,8 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, message_hist
         message_history.append({"role": "system", "content": sytem_prompt})
     message_history.append({"role": "user", "content": user_input})
 
+    print("history:", message_history)
+
     for notebook_html, messages in run_interactive_notebook(client, model, message_history, sbx, max_new_tokens=max_new_tokens):
         message_history = messages
         yield notebook_html, message_history
