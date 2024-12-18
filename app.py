@@ -95,7 +95,7 @@ with gr.Blocks(css=css) as demo:
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
 
-    with gr.Accordion("Upload files", open=False:)
+    with gr.Accordion("Upload files", open=False):
         files = gr.File(label="Upload files to use", file_count="multiple")
 
         
