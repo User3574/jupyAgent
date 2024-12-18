@@ -1,15 +1,28 @@
 import os
 import gradio as gr
+from gradio.utils import get_space
 from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
 from pathlib import Path
 from transformers import AutoTokenizer
 
-from utils import run_interactive_notebook, create_base_notebook, update_notebook_display
+if not get_space():
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except (ImportError, ModuleNotFoundError):
+        pass
 
 
-E2B_API_KEY = os.environ['E2B_API_KEY']
-HF_TOKEN = os.environ['HF_TOKEN']
+from utils import (
+    run_interactive_notebook,
+    create_base_notebook,
+    update_notebook_display,
+)
+
+E2B_API_KEY = os.environ["E2B_API_KEY"]
+HF_TOKEN = os.environ["HF_TOKEN"]
 DEFAULT_MAX_TOKENS = 512
 DEFAULT_SYSTEM_PROMPT = """You are a code assistant with access to a ipython interpreter.
 You solve tasks step-by-step and rely on code execution results.
@@ -31,11 +44,13 @@ List of available files:
 {}"""
 
 
-def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files, message_history):
+def execute_jupyter_agent(
+    sytem_prompt, user_input, max_new_tokens, model, files, message_history
+):
     client = InferenceClient(api_key=HF_TOKEN)
 
     tokenizer = AutoTokenizer.from_pretrained(model)
-    #model = "meta-llama/Llama-3.1-8B-Instruct"
+    # model = "meta-llama/Llama-3.1-8B-Instruct"
 
     sbx = Sandbox(api_key=E2B_API_KEY)
 
@@ -48,16 +63,21 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
                 sbx.files.write(filpath.name, file)
                 filenames.append(filpath.name)
 
-
-    
     # Initialize message_history if it doesn't exist
-    if len(message_history)==0:
-        message_history.append({"role": "system", "content": sytem_prompt.format("- " + "\n- ".join(filenames))})
+    if len(message_history) == 0:
+        message_history.append(
+            {
+                "role": "system",
+                "content": sytem_prompt.format("- " + "\n- ".join(filenames)),
+            }
+        )
     message_history.append({"role": "user", "content": user_input})
 
     print("history:", message_history)
 
-    for notebook_html, messages in run_interactive_notebook(client, model, tokenizer, message_history, sbx, max_new_tokens=max_new_tokens):
+    for notebook_html, messages in run_interactive_notebook(
+        client, model, tokenizer, message_history, sbx, max_new_tokens=max_new_tokens
+    ):
         message_history = messages
         yield notebook_html, message_history
 
@@ -65,6 +85,7 @@ def execute_jupyter_agent(sytem_prompt, user_input, max_new_tokens, model,files,
 def clear(state):
     state = []
     return update_notebook_display(create_base_notebook([])[0]), state
+
 
 css = """
 #component-0 {
@@ -86,11 +107,13 @@ css = """
 # Create the interface
 with gr.Blocks() as demo:
     state = gr.State(value=[])
-    
+
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
-    
-    user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
-    
+
+    user_input = gr.Textbox(
+        value="Solve the Lotka-Volterra equation and plot the results.", lines=3
+    )
+
     with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
@@ -98,13 +121,12 @@ with gr.Blocks() as demo:
     with gr.Accordion("Upload files", open=False):
         files = gr.File(label="Upload files to use", file_count="multiple")
 
-        
     with gr.Accordion("Advanced Settings", open=False):
         system_input = gr.Textbox(
             label="System Prompt",
             value=DEFAULT_SYSTEM_PROMPT,
             elem_classes="input-box",
-            lines=8
+            lines=8,
         )
         with gr.Row():
             max_tokens = gr.Number(
@@ -113,26 +135,24 @@ with gr.Blocks() as demo:
                 minimum=128,
                 maximum=2048,
                 step=8,
-                interactive=True
+                interactive=True,
             )
-            
-            model = gr.Dropdown(value="meta-llama/Llama-3.1-8B-Instruct", 
-                                choices=[
-                "meta-llama/Llama-3.2-3B-Instruct",
-                "meta-llama/Llama-3.1-8B-Instruct", 
-                "meta-llama/Llama-3.1-70B-Instruct"]
-                               )
-        
+
+            model = gr.Dropdown(
+                value="meta-llama/Llama-3.1-8B-Instruct",
+                choices=[
+                    "meta-llama/Llama-3.2-3B-Instruct",
+                    "meta-llama/Llama-3.1-8B-Instruct",
+                    "meta-llama/Llama-3.1-70B-Instruct",
+                ],
+            )
+
     generate_btn.click(
         fn=execute_jupyter_agent,
         inputs=[system_input, user_input, max_tokens, model, files, state],
-        outputs=[html_output,  state]
+        outputs=[html_output, state],
     )
 
-    clear_btn.click(
-        fn=clear,
-        inputs=[state],
-        outputs=[html_output,  state]
-    )
+    clear_btn.click(fn=clear, inputs=[state], outputs=[html_output, state])
 
-demo.launch()
+demo.launch(ssr_mode=False)
