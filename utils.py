@@ -106,6 +106,11 @@ header_message = """<p align="center">
 
 <p style="text-align:center;">Let a LLM agent write and execute code inside a notebook!</p>"""
 
+bad_html_bad = """input[type="file"] {
+  display: block;
+}"""
+
+
 def create_base_notebook(messages):
     base_notebook = {
         "metadata": {
@@ -204,6 +209,7 @@ def parse_exec_result_llm(execution):
 def update_notebook_display(notebook_data):
     notebook = nbformat.from_dict(notebook_data)
     notebook_body, _ = html_exporter.from_notebook_node(notebook)
+    notebook_body = notebook_body.replace(bad_html_bad, "")
     return notebook_body
 
 def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
