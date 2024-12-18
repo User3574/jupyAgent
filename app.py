@@ -86,37 +86,42 @@ css = """
 # Create the interface
 with gr.Blocks(css=css) as demo:
     state = gr.State(value=[])
+    
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
-    with gr.Row():
-        user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
-    with gr.Row():
-        files = gr.File(label="Upload files to use", file_count="multiple")
+    
+    user_input = gr.Textbox(value="Solve the Lotka-Volterra equation and plot the results.", lines=3)
+    
     with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
-    with gr.Row():
-        with gr.Accordion("Advanced Settings", open=False):
-            system_input = gr.Textbox(
-                label="System Prompt",
-                value=DEFAULT_SYSTEM_PROMPT,
-                elem_classes="input-box",
-                lines=8
+
+    with gr.Accordion("Upload files", open=False:)
+        files = gr.File(label="Upload files to use", file_count="multiple")
+
+        
+    with gr.Accordion("Advanced Settings", open=False):
+        system_input = gr.Textbox(
+            label="System Prompt",
+            value=DEFAULT_SYSTEM_PROMPT,
+            elem_classes="input-box",
+            lines=8
+        )
+        with gr.Row():
+            max_tokens = gr.Number(
+                label="Max New Tokens",
+                value=DEFAULT_MAX_TOKENS,
+                minimum=128,
+                maximum=2048,
+                step=8,
+                interactive=True
             )
-            with gr.Row():
-                max_tokens = gr.Number(
-                    label="Max New Tokens",
-                    value=DEFAULT_MAX_TOKENS,
-                    minimum=128,
-                    maximum=2048,
-                    step=8,
-                    interactive=True
-                )
-                
-                model = gr.Dropdown(choices=[
-                    "meta-llama/Llama-3.2-3B-Instruct",
-                    "meta-llama/Llama-3.1-8B-Instruct", 
-                    "meta-llama/Llama-3.1-70B-Instruct"]
-                                   )
+            
+            model = gr.Dropdown(value="meta-llama/Llama-3.1-8B-Instruct", 
+                                choices=[
+                "meta-llama/Llama-3.2-3B-Instruct",
+                "meta-llama/Llama-3.1-8B-Instruct", 
+                "meta-llama/Llama-3.1-70B-Instruct"]
+                               )
         
     generate_btn.click(
         fn=execute_jupyter_agent,
