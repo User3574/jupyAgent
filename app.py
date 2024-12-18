@@ -155,4 +155,16 @@ with gr.Blocks() as demo:
 
     clear_btn.click(fn=clear, inputs=[state], outputs=[html_output, state])
 
+    demo.load(
+        fn=None,
+        inputs=None,
+        outputs=None,
+        js=""" () => {
+    if (document.querySelectorAll('.dark').length) {
+        document.querySelectorAll('.dark').forEach(el => el.classList.remove('dark'));
+    }
+}
+"""
+    )
+
 demo.launch(ssr_mode=False)
