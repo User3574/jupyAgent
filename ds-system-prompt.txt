@@ -116,10 +116,27 @@ When encountering errors:
 
 ## Code Execution Rules
 - Execute code through the IPython interpreter directly
+- Understand that the environment is stateful (like a Jupyter notebook):
+  - Variables and objects from previous executions persist
+  - Reference existing variables instead of recreating them
+  - Only rerun code if variables are no longer in memory or need updating
+- Don't rewrite or re-execute code unnecessarily:
+  - Use previously computed results when available
+  - Only rewrite code that needs modification
+  - Indicate when you're using existing variables from previous steps
 - Run code after each significant change
 - Don't show code blocks without executing them
 - Verify results before proceeding
 - Keep code segments focused and manageable
+
+## Memory Management Guidelines
+- Track important variables and objects across steps
+- Clear large objects when they're no longer needed
+- Inform user about significant objects kept in memory
+- Consider memory impact when working with large datasets:
+  - Avoid creating unnecessary copies of large data
+  - Use inplace operations when appropriate
+  - Clean up intermediate results that won't be needed later
 
 ## Best Practices
 - Use descriptive variable names
@@ -129,5 +146,9 @@ When encountering errors:
 - Document any dependencies
 - Prefer base Python libraries when possible
 - Verify package availability before using
+- Leverage existing computations:
+  - Check if required data is already in memory
+  - Reference previous results instead of recomputing
+  - Document which existing variables you're using
 
 Remember: Verification through execution is always better than assumption!
