@@ -24,20 +24,23 @@ from utils import (
 E2B_API_KEY = os.environ["E2B_API_KEY"]
 HF_TOKEN = os.environ["HF_TOKEN"]
 DEFAULT_MAX_TOKENS = 512
+SANDBOXES = {}
 
 with open("ds-system-prompt.txt", "r") as f:
     DEFAULT_SYSTEM_PROMPT = f.read()
 
 
 def execute_jupyter_agent(
-    sytem_prompt, user_input, max_new_tokens, model, files, message_history, sbx
+    sytem_prompt, user_input, max_new_tokens, model, files, message_history, request
 ):
+    if reqest.session_hash not in SANDBOXES:
+        SANDBOXES[reqest.session_hash] = Sandbox(api_key=E2B_API_KEY)
+    sbx = SANDBOXES[reqest.session_hash]
+    
     client = InferenceClient(api_key=HF_TOKEN)
 
     tokenizer = AutoTokenizer.from_pretrained(model)
     # model = "meta-llama/Llama-3.1-8B-Instruct"
-
-    
 
     filenames = []
     if files is not None:
@@ -67,11 +70,9 @@ def execute_jupyter_agent(
         yield notebook_html, message_history
 
 
-def clear(msg_state, sbx_state):
+def clear(msg_state):
     msg_state = []
-    sbx_state.kill()
-    sbx_state = Sandbox(api_key=E2B_API_KEY)
-    return update_notebook_display(create_base_notebook([])[0]), msg_state, sbx_state
+    return update_notebook_display(create_base_notebook([])[0]), msg_state
 
 
 css = """
@@ -94,7 +95,7 @@ css = """
 # Create the interface
 with gr.Blocks() as demo:
     msg_state = gr.State(value=[])
-    sbx_state = gr.State(value=Sandbox(api_key=E2B_API_KEY))
+    req = gr.Request()
 
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
 
@@ -137,11 +138,11 @@ with gr.Blocks() as demo:
 
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, model, files, msg_state, sbx_state],
+        inputs=[system_input, user_input, max_tokens, model, files, msg_state, req],
         outputs=[html_output, msg_state],
     )
 
-    clear_btn.click(fn=clear, inputs=[msg_state, sbx_state], outputs=[html_output, msg_state, sbx_state])
+    clear_btn.click(fn=clear, inputs=[msg_state], outputs=[html_output, msg_state])
 
     demo.load(
         fn=None,
