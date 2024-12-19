@@ -113,15 +113,17 @@ with gr.Blocks() as demo:
     msg_state = gr.State(value=[])
 
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
-    file = gr.File(TMP_DIR+"jupyter-agent.ipynb")
+    
     user_input = gr.Textbox(
-        value="Solve the Lotka-Volterra equation and plot the results.", lines=3
+        value="Solve the Lotka-Volterra equation and plot the results.", lines=3, label="User input"
     )
 
     with gr.Row():
         generate_btn = gr.Button("Let's go!")
         clear_btn = gr.Button("Clear")
-
+    
+    file = gr.File(TMP_DIR+"jupyter-agent.ipynb", label="Download Jupyter Notebook")
+    
     with gr.Accordion("Upload files", open=False):
         files = gr.File(label="Upload files to use", file_count="multiple")
 
