@@ -31,7 +31,7 @@ with open("ds-system-prompt.txt", "r") as f:
 
 
 def execute_jupyter_agent(
-    sytem_prompt, user_input, max_new_tokens, model, files, message_history, request
+    sytem_prompt, user_input, max_new_tokens, model, files, message_history, request: gr.Request
 ):
     if reqest.session_hash not in SANDBOXES:
         SANDBOXES[reqest.session_hash] = Sandbox(api_key=E2B_API_KEY)
@@ -95,7 +95,6 @@ css = """
 # Create the interface
 with gr.Blocks() as demo:
     msg_state = gr.State(value=[])
-    req = gr.Request()
 
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
 
@@ -138,7 +137,7 @@ with gr.Blocks() as demo:
 
     generate_btn.click(
         fn=execute_jupyter_agent,
-        inputs=[system_input, user_input, max_tokens, model, files, msg_state, req],
+        inputs=[system_input, user_input, max_tokens, model, files, msg_state],
         outputs=[html_output, msg_state],
     )
 
