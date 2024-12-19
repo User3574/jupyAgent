@@ -317,4 +317,4 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
             if tokens[-1] == "<|eot_id|>":
                 break
     
-    yield update_notebook_display(notebook_data), messages
+    yield update_notebook_display(notebook_data), notebook_data, messages
