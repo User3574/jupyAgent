@@ -26,7 +26,12 @@
     {{- "Environment: ipython\n" }}
 {%- endif %}
 {%- if builtin_tools is defined %}
-    {{- "Tools: " + builtin_tools | reject('equalto', 'code_interpreter') | join(", ") + "\n\n"}}
+    {%- set filtered_tools = builtin_tools | reject('equalto', 'code_interpreter') | list %}
+    {%- if filtered_tools | length > 0 %}
+        {{- "Tools: " + filtered_tools | join(", ") + "\n\n"}}
+    {%- else %}
+        {{- "\n" }}
+    {%- endif %}
 {%- endif %}
 {{- "Cutting Knowledge Date: December 2023\n" }}
 {{- "Today Date: " + date_string + "\n\n" }}
