@@ -222,99 +222,99 @@ def update_notebook_display(notebook_data):
 def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
     notebook_data, code_cell_counter = create_base_notebook(messages)
     turns = 0
-    try:
-        #code_cell_counter = 0
-        while turns <= MAX_TURNS:
-            turns += 1
-            input_tokens = tokenizer.apply_chat_template(
-                messages,
-                chat_template=llama_template,
-                builtin_tools=["code_interpreter"], 
-                add_generation_prompt=True
-            )
-            model_input = tokenizer.decode(input_tokens)
+    
+    #code_cell_counter = 0
+    while turns <= MAX_TURNS:
+        turns += 1
+        input_tokens = tokenizer.apply_chat_template(
+            messages,
+            chat_template=llama_template,
+            builtin_tools=["code_interpreter"], 
+            add_generation_prompt=True
+        )
+        model_input = tokenizer.decode(input_tokens)
 
-            print(f"Model input:\n{model_input}\n{'='*80}")
-            
-            response_stream = client.text_generation(
-                model=model,
-                prompt=model_input,
-                details=True,
-                stream=True,
-                do_sample=True,
-                repetition_penalty=1.1,
-                temperature=0.8,
-                max_new_tokens=max_new_tokens,
-            )
-            
-            assistant_response = ""
-            tokens = []
-            
-            code_cell = False
-            for i, chunk in enumerate(response_stream):
-                if not chunk.token.special:
-                    content = chunk.token.text
-                else:
-                    content = ""
-                tokens.append(chunk.token.text)                
-                assistant_response += content
-
-                if len(tokens)==1:
-                    create_cell=True
-                    code_cell = "<|python_tag|>" in tokens[0]
-                    if code_cell:
-                        code_cell_counter +=1
-                else:
-                    create_cell = False
-                
-                # Update notebook in real-time
-                if create_cell:
-                    if "<|python_tag|>" in tokens[0]:
-                        notebook_data["cells"].append({
-                            "cell_type": "code",
-                            "execution_count": None,
-                            "metadata": {},
-                            "source": assistant_response,
-                            "outputs": []
-                        })
-                    else:
-                        notebook_data["cells"].append({
-                            "cell_type": "markdown",
-                            "metadata": {},
-                            "source": assistant_response
-                        })
-                else:
-                    notebook_data["cells"][-1]["source"] = assistant_response
-                if i%16 == 0:
-                    yield update_notebook_display(notebook_data), messages
-            yield update_notebook_display(notebook_data), messages
-
-
-            # Handle code execution
-            if code_cell:
-                notebook_data["cells"][-1]["execution_count"] = code_cell_counter
-
-                
-                exec_result, execution = execute_code(sbx, assistant_response)
-                messages.append({
-                    "role": "assistant",
-                    "content": assistant_response,
-                    "tool_calls": [{
-                        "type": "function",
-                        "function": {
-                            "name": "code_interpreter",
-                            "arguments": {"code": assistant_response}
-                        }
-                    }]
-                })
-                messages.append({"role": "ipython", "content": parse_exec_result_llm(execution), "nbformat": parse_exec_result_nb(execution)})
-                
-                # Update the last code cell with execution results
-                notebook_data["cells"][-1]["outputs"] = parse_exec_result_nb(execution)
-                update_notebook_display(notebook_data)
+        print(f"Model input:\n{model_input}\n{'='*80}")
+        
+        response_stream = client.text_generation(
+            model=model,
+            prompt=model_input,
+            details=True,
+            stream=True,
+            do_sample=True,
+            repetition_penalty=1.1,
+            temperature=0.8,
+            max_new_tokens=max_new_tokens,
+        )
+        
+        assistant_response = ""
+        tokens = []
+        
+        code_cell = False
+        for i, chunk in enumerate(response_stream):
+            if not chunk.token.special:
+                content = chunk.token.text
             else:
-                messages.append({"role": "assistant", "content": assistant_response})
-                if tokens[-1] == "<|eot_id|>":
-                    break
+                content = ""
+            tokens.append(chunk.token.text)                
+            assistant_response += content
+
+            if len(tokens)==1:
+                create_cell=True
+                code_cell = "<|python_tag|>" in tokens[0]
+                if code_cell:
+                    code_cell_counter +=1
+            else:
+                create_cell = False
+            
+            # Update notebook in real-time
+            if create_cell:
+                if "<|python_tag|>" in tokens[0]:
+                    notebook_data["cells"].append({
+                        "cell_type": "code",
+                        "execution_count": None,
+                        "metadata": {},
+                        "source": assistant_response,
+                        "outputs": []
+                    })
+                else:
+                    notebook_data["cells"].append({
+                        "cell_type": "markdown",
+                        "metadata": {},
+                        "source": assistant_response
+                    })
+            else:
+                notebook_data["cells"][-1]["source"] = assistant_response
+            if i%16 == 0:
+                yield update_notebook_display(notebook_data), messages
+        yield update_notebook_display(notebook_data), messages
+
+
+        # Handle code execution
+        if code_cell:
+            notebook_data["cells"][-1]["execution_count"] = code_cell_counter
+
+            
+            exec_result, execution = execute_code(sbx, assistant_response)
+            messages.append({
+                "role": "assistant",
+                "content": assistant_response,
+                "tool_calls": [{
+                    "type": "function",
+                    "function": {
+                        "name": "code_interpreter",
+                        "arguments": {"code": assistant_response}
+                    }
+                }]
+            })
+            messages.append({"role": "ipython", "content": parse_exec_result_llm(execution), "nbformat": parse_exec_result_nb(execution)})
+            
+            # Update the last code cell with execution results
+            notebook_data["cells"][-1]["outputs"] = parse_exec_result_nb(execution)
+            update_notebook_display(notebook_data)
+        else:
+            messages.append({"role": "assistant", "content": assistant_response})
+            if tokens[-1] == "<|eot_id|>":
+                break
     
     yield update_notebook_display(notebook_data), messages
