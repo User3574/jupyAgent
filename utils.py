@@ -229,6 +229,8 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
                 add_generation_prompt=True
             )
             model_input = tokenizer.decode(input_tokens)
+
+            print(f"Model input:\n{model_input}\n{'='*80}")
             
             response_stream = client.text_generation(
                 model=model,
