@@ -5,6 +5,7 @@ from huggingface_hub import InferenceClient
 from e2b_code_interpreter import Sandbox
 from pathlib import Path
 from transformers import AutoTokenizer
+import json
 
 if not get_space():
     try:
@@ -25,6 +26,9 @@ E2B_API_KEY = os.environ["E2B_API_KEY"]
 HF_TOKEN = os.environ["HF_TOKEN"]
 DEFAULT_MAX_TOKENS = 512
 SANDBOXES = {}
+TMP_DIR = './tmp/'
+if not os.path.exists(TMP_DIR):
+    os.makedirs(TMP_DIR)
 
 with open("ds-system-prompt.txt", "r") as f:
     DEFAULT_SYSTEM_PROMPT = f.read()
@@ -36,7 +40,11 @@ def execute_jupyter_agent(
     if request.session_hash not in SANDBOXES:
         SANDBOXES[request.session_hash] = Sandbox(api_key=E2B_API_KEY)
     sbx = SANDBOXES[request.session_hash]
-    
+
+    save_dir = os.path.join(TMP_DIR, request.session_hash)
+    os.makedirs(save_dir, exist_ok=True)
+    save_dir = os.path.join(save_dir, 'jupyter-agent.ipynb')
+
     client = InferenceClient(api_key=HF_TOKEN)
 
     tokenizer = AutoTokenizer.from_pretrained(model)
@@ -63,12 +71,16 @@ def execute_jupyter_agent(
 
     print("history:", message_history)
 
-    for notebook_html, messages in run_interactive_notebook(
+    for notebook_html, notebook_data, messages in run_interactive_notebook(
         client, model, tokenizer, message_history, sbx, max_new_tokens=max_new_tokens
     ):
         message_history = messages
-        yield notebook_html, message_history
-
+        
+        yield notebook_html, message_history, None
+    
+    with open(save_dir, 'w', encoding='utf-8') as f:
+        json.dump(notebook_data, f, indent=2)
+    yield notebook_html, message_history, save_dir
 
 def clear(msg_state):
     msg_state = []
@@ -97,7 +109,7 @@ with gr.Blocks() as demo:
     msg_state = gr.State(value=[])
 
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
-
+    file = gr.File()
     user_input = gr.Textbox(
         value="Solve the Lotka-Volterra equation and plot the results.", lines=3
     )
@@ -139,7 +151,7 @@ with gr.Blocks() as demo:
     generate_btn.click(
         fn=execute_jupyter_agent,
         inputs=[system_input, user_input, max_tokens, model, files, msg_state],
-        outputs=[html_output, msg_state],
+        outputs=[html_output, msg_state, file],
     )
 
     clear_btn.click(fn=clear, inputs=[msg_state], outputs=[html_output, msg_state])
