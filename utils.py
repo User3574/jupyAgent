@@ -14,6 +14,9 @@ with open("llama3_template.jinja", "r") as f:
     llama_template = f.read() 
 
 
+MAX_TURNS = 4
+
+
 def parse_exec_result_nb(execution):
     """Convert an E2B Execution object to Jupyter notebook cell output format"""
     outputs = []
@@ -217,11 +220,12 @@ def update_notebook_display(notebook_data):
     return notebook_body
 
 def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
-    print("Start!")
     notebook_data, code_cell_counter = create_base_notebook(messages)
+    turns = 0
     try:
         #code_cell_counter = 0
-        while True:
+        while turns <= MAX_TURNS:
+            turns += 1
             input_tokens = tokenizer.apply_chat_template(
                 messages,
                 chat_template=llama_template,
@@ -286,7 +290,6 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
             yield update_notebook_display(notebook_data), messages
 
 
-            print(f"last_tokens: {'|'.join(tokens[-10:])}, n_msg: {len(messages)}")
             # Handle code execution
             if code_cell:
                 notebook_data["cells"][-1]["execution_count"] = code_cell_counter
