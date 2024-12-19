@@ -30,6 +30,10 @@ TMP_DIR = './tmp/'
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR)
 
+notebook_data = create_base_notebook([])[0]
+with open(TMP_DIR+"jupyter-agent.ipynb", 'w', encoding='utf-8') as f:
+        json.dump(notebook_data, f, indent=2)
+
 with open("ds-system-prompt.txt", "r") as f:
     DEFAULT_SYSTEM_PROMPT = f.read()
 
@@ -109,7 +113,7 @@ with gr.Blocks() as demo:
     msg_state = gr.State(value=[])
 
     html_output = gr.HTML(value=update_notebook_display(create_base_notebook([])[0]))
-    file = gr.File()
+    file = gr.File(TMP_DIR+"jupyter-agent.ipynb")
     user_input = gr.Textbox(
         value="Solve the Lotka-Volterra equation and plot the results.", lines=3
     )
