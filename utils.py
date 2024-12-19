@@ -316,7 +316,5 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
                 messages.append({"role": "assistant", "content": assistant_response})
                 if tokens[-1] == "<|eot_id|>":
                     break
-    finally:
-        sbx.kill()
     
     yield update_notebook_display(notebook_data), messages
