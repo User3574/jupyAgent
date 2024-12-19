@@ -33,9 +33,9 @@ with open("ds-system-prompt.txt", "r") as f:
 def execute_jupyter_agent(
     sytem_prompt, user_input, max_new_tokens, model, files, message_history, request: gr.Request
 ):
-    if reqest.session_hash not in SANDBOXES:
-        SANDBOXES[reqest.session_hash] = Sandbox(api_key=E2B_API_KEY)
-    sbx = SANDBOXES[reqest.session_hash]
+    if request.session_hash not in SANDBOXES:
+        SANDBOXES[request.session_hash] = Sandbox(api_key=E2B_API_KEY)
+    sbx = SANDBOXES[request.session_hash]
     
     client = InferenceClient(api_key=HF_TOKEN)
 
