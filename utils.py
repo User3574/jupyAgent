@@ -10,6 +10,10 @@ config = Config()
 html_exporter = HTMLExporter(config=config, template_name="classic")
 
 
+with open("llama3_template.jinja", "r") as f:
+    llama_template = f.read() 
+
+
 def parse_exec_result_nb(execution):
     """Convert an E2B Execution object to Jupyter notebook cell output format"""
     outputs = []
@@ -219,7 +223,8 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
         #code_cell_counter = 0
         while True:
             input_tokens = tokenizer.apply_chat_template(
-                messages, 
+                messages,
+                template=llama_template,
                 builtin_tools=["code_interpreter"], 
                 add_generation_prompt=True
             )
