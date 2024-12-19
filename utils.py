@@ -224,7 +224,7 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
         while True:
             input_tokens = tokenizer.apply_chat_template(
                 messages,
-                template=llama_template,
+                chat_template=llama_template,
                 builtin_tools=["code_interpreter"], 
                 add_generation_prompt=True
             )
