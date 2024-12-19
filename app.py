@@ -80,7 +80,7 @@ def execute_jupyter_agent(
     ):
         message_history = messages
         
-        yield notebook_html, message_history, None
+        yield notebook_html, message_history, TMP_DIR+"jupyter-agent.ipynb"
     
     with open(save_dir, 'w', encoding='utf-8') as f:
         json.dump(notebook_data, f, indent=2)
