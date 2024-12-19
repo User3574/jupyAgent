@@ -286,8 +286,8 @@ def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_to
             else:
                 notebook_data["cells"][-1]["source"] = assistant_response
             if i%16 == 0:
-                yield update_notebook_display(notebook_data), messages
-        yield update_notebook_display(notebook_data), messages
+                yield update_notebook_display(notebook_data), notebook_data, messages
+        yield update_notebook_display(notebook_data), notebook_data, messages
 
 
         # Handle code execution
