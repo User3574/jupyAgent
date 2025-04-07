@@ -1,320 +1,165 @@
-import nbformat
-from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
-from nbconvert import HTMLExporter
-from huggingface_hub import InferenceClient
-from e2b_code_interpreter import Sandbox
-from transformers import AutoTokenizer
-from traitlets.config import Config
+import re
+import markdown
 
-config = Config()
-html_exporter = HTMLExporter(config=config, template_name="classic")
+from typing import List, Dict, Iterator
+from typing import Optional
+from smolagents.agent_types import AgentAudio, AgentImage, AgentText
+from smolagents.agents import MultiStepAgent, PlanningStep
+from smolagents.memory import ActionStep, FinalAnswerStep, MemoryStep
+from cells import Cell, CellType
 
-
-with open("llama3_template.jinja", "r") as f:
-    llama_template = f.read() 
-
-
-MAX_TURNS = 4
-
-
-def parse_exec_result_nb(execution):
-    """Convert an E2B Execution object to Jupyter notebook cell output format"""
-    outputs = []
-    
-    if execution.logs.stdout:
-        outputs.append({
-            'output_type': 'stream',
-            'name': 'stdout',
-            'text': ''.join(execution.logs.stdout)
-        })
-    
-    if execution.logs.stderr:
-        outputs.append({
-            'output_type': 'stream',
-            'name': 'stderr',
-            'text': ''.join(execution.logs.stderr)
-        })
-
-    if execution.error:
-        outputs.append({
-            'output_type': 'error',
-            'ename': execution.error.name,
-            'evalue': execution.error.value,
-            'traceback': [line for line in execution.error.traceback.split('\n')]
-        })
-
-    for result in execution.results:
-        output = {
-            'output_type': 'execute_result' if result.is_main_result else 'display_data',
-            'metadata': {},
-            'data': {}
-        }
-        
-        if result.text:
-            output['data']['text/plain'] = [result.text]  # Array for text/plain
-        if result.html:
-            output['data']['text/html'] = result.html
-        if result.png:
-            output['data']['image/png'] = result.png
-        if result.svg:
-            output['data']['image/svg+xml'] = result.svg
-        if result.jpeg:
-            output['data']['image/jpeg'] = result.jpeg
-        if result.pdf:
-            output['data']['application/pdf'] = result.pdf
-        if result.latex:
-            output['data']['text/latex'] = result.latex
-        if result.json:
-            output['data']['application/json'] = result.json
-        if result.javascript:
-            output['data']['application/javascript'] = result.javascript
-
-        if result.is_main_result and execution.execution_count is not None:
-            output['execution_count'] = execution.execution_count
-
-        if output['data']:
-            outputs.append(output)
-
-    return outputs
+def get_step_footnote_content(step_log: MemoryStep, step_name: str) -> str:
+    """Get a footnote string for a step log with duration and token information"""
+    step_footnote = f"**{step_name}**"
+    if hasattr(step_log, "input_token_count") and hasattr(step_log, "output_token_count"):
+        token_str = f" | Input tokens:{step_log.input_token_count:,} | Output tokens: {step_log.output_token_count:,}"
+        step_footnote += token_str
+    if hasattr(step_log, "duration"):
+        step_duration = f" | Duration: {round(float(step_log.duration), 2)}" if step_log.duration else None
+        step_footnote += step_duration
+    step_footnote_content = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
+    return step_footnote_content
 
 
-system_template = """\
-<details>
-  <summary style="display: flex; align-items: center;">
-    <div class="alert alert-block alert-info" style="margin: 0; width: 100%;">
-      <b>System: <span class="arrow">▶</span></b>
-    </div>
-  </summary>
-  <div class="alert alert-block alert-info">
-    {}
-  </div>
-</details>
+def pull_messages_from_step(step_log: MemoryStep) -> Iterator[Cell]:
+    if isinstance(step_log, ActionStep):
+        # step_number = f"Step {step_log.step_number}" if step_log.step_number is not None else "Step"
+        # yield Cell(role="assistant", cell_type=CellType.Info, metadata={}, source=f"<h2>{step_number}</h2>")
 
-<style>
-details > summary .arrow {{
-  display: inline-block;
-  transition: transform 0.2s;
-}}
-details[open] > summary .arrow {{
-  transform: rotate(90deg);
-}}
-</style>
-"""
+        # First yield the thought/reasoning from the LLM
+        if hasattr(step_log, "model_output") and step_log.model_output is not None:
+            # Clean up the LLM output
+            model_output = step_log.model_output.strip()
+            # Remove any trailing <end_code> and extra backticks, handling multiple possible formats
+            model_output = re.sub(r"```\s*<end_code>", "```", model_output)  # handles ```<end_code>
+            model_output = re.sub(r"<end_code>\s*```", "```", model_output)  # handles <end_code>```
+            model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)  # handles ```\n<end_code>
+            model_output = model_output.strip()
+            yield Cell(role="assistant", cell_type=CellType.Thought, metadata={}, source=model_output)
 
-user_template = """<div class="alert alert-block alert-success">
-<b>User:</b> {}
-</div>
-"""
+        # For tool calls, create a parent message
+        if hasattr(step_log, "tool_calls") and step_log.tool_calls is not None:
+            first_tool_call = step_log.tool_calls[0]
+            used_code = first_tool_call.name == "python_interpreter"
+            parent_id = f"call_{len(step_log.tool_calls)}"
 
-header_message = """<p align="center">
-  <img src="https://huggingface.co/spaces/lvwerra/jupyter-agent/resolve/main/jupyter-agent.png" />
-</p>
+            # Tool call becomes the parent message with timing info
+            # First we will handle arguments based on type
+            args = first_tool_call.arguments
+            if isinstance(args, dict):
+                content = str(args.get("answer", str(args)))
+            else:
+                content = str(args).strip()
 
+            if used_code:
+                # Clean up the content by removing any end code tags
+                # content = re.sub(r"```.*?\n", "", content)  # Remove existing code blocks
+                # content = re.sub(r"\s*<end_code>\s*", "", content)  # Remove end_code tags
+                # content = content.strip()
+                content = content.replace("<end_code>", "")
+                content = content.strip()
 
-<p style="text-align:center;">Let a LLM agent write and execute code inside a notebook!</p>"""
+            parent_message_tool = Cell(
+                role="assistant",
+                source=content,
+                cell_type=CellType.Code,
+                metadata={
+                    "title": f"🛠️ Used tool {first_tool_call.name}",
+                    "id": parent_id,
+                    "status": "done",
+                },
+            )
+            yield parent_message_tool
 
-bad_html_bad = """input[type="file"] {
-  display: block;
-}"""
+        # Display execution logs if they exist
+        if hasattr(step_log, "observations") and (
+                step_log.observations is not None and step_log.observations.strip()
+        ):  # Only yield execution logs if there's actual content
+            log_content = step_log.observations.strip()
+            if log_content:
+                log_content = re.sub(r"^Execution logs:\s*", "", log_content)
+                yield Cell(
+                    role="assistant",
+                    cell_type=CellType.Output,
+                    metadata={"title": "📝 Execution Logs", "status": "done"},
+                    source=f"{log_content}",
+                )
 
+        # Display any errors
+        if hasattr(step_log, "error") and step_log.error is not None:
+            yield Cell(
+                role="assistant",
+                cell_type=CellType.Error,
+                metadata={"title": "💥 Error", "status": "done"},
+                source=str(step_log.error),
+            )
 
-def create_base_notebook(messages):
-    base_notebook = {
-        "metadata": {
-            "kernel_info": {"name": "python3"},
-            "language_info": {
-                "name": "python",
-                "version": "3.12",
-            },
-        },
-        "nbformat": 4,
-        "nbformat_minor": 0,
-        "cells": []
-    }
-    base_notebook["cells"].append({
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": header_message
-            })
+        # Update parent message metadata to done status without yielding a new message
+        if getattr(step_log, "observations_images", []):
+            for image in step_log.observations_images:
+                path_image = AgentImage(image).to_string()
+                yield Cell(
+                    role="assistant",
+                    cell_type=CellType.File,
+                    metadata={"title": "🖼️ Output Image", "status": "done"},
+                    source=path_image,
+                )
 
-    if len(messages)==0:
-        base_notebook["cells"].append({
-                            "cell_type": "code",
-                            "execution_count": None,
-                            "metadata": {},
-                            "source": "",
-                            "outputs": []
-                        })
+        # yield Cell(role="assistant", cell_type=CellType.Info, metadata={}, source=get_step_footnote_content(step_log, step_number))
 
-    code_cell_counter = 0
-    
-    for message in messages:
-        if message["role"] == "system":
-            text = system_template.format(message["content"].replace('\n', '<br>'))
-            base_notebook["cells"].append({
-                "cell_type": "markdown",
-                "metadata": {},
-                "source": text
-                })
-        elif message["role"] == "user":
-            text = user_template.format(message["content"].replace('\n', '<br>'))
-            base_notebook["cells"].append({
-                "cell_type": "markdown",
-                "metadata": {},
-                "source": text
-                })
+    elif isinstance(step_log, PlanningStep):
+        yield Cell(role="assistant", cell_type=CellType.Plan, metadata={}, source=step_log.plan)
+        # yield Cell(role="assistant", cell_type=CellType.Plan, metadata={}, source=get_step_footnote_content(step_log, "Planning step"))
 
-        elif message["role"] == "assistant" and "tool_calls" in message:
-            base_notebook["cells"].append({
-                "cell_type": "code",
-                "execution_count": None,
-                "metadata": {},
-                "source": message["content"],
-                "outputs": []
-            })
-
-        elif message["role"] == "ipython":
-            code_cell_counter +=1
-            base_notebook["cells"][-1]["outputs"] = message["nbformat"]
-            base_notebook["cells"][-1]["execution_count"] = code_cell_counter
-
-        elif message["role"] == "assistant" and "tool_calls" not in message:
-            base_notebook["cells"].append({
-                "cell_type": "markdown",
-                "metadata": {},
-                "source": message["content"]
-            })
-            
+    elif isinstance(step_log, FinalAnswerStep):
+        final_answer = step_log.final_answer
+        if isinstance(final_answer, AgentText):
+            yield Cell(
+                role="assistant",
+                metadata={},
+                cell_type=CellType.Answer,
+                source=f"**Final answer:**\n{final_answer.to_string()}\n",
+            )
+        elif isinstance(final_answer, AgentImage):
+            yield Cell(
+                role="assistant",
+                cell_type=CellType.Answer,
+                metadata={"path": final_answer.to_string(), "mime_type": "image/png"},
+                source="Image",
+            )
+        elif isinstance(final_answer, AgentAudio):
+            yield Cell(
+                role="assistant",
+                cell_type=CellType.Answer,
+                metadata={"path": final_answer.to_string(), "mime_type": "audio/wav"},
+                source="Audio"
+            )
         else:
-            raise ValueError(message)
-        
-    return base_notebook, code_cell_counter
+            yield Cell(role="assistant", cell_type=CellType.Answer, metadata={},
+                       source=f"{str(final_answer)}")
 
-def execute_code(sbx, code):
-    execution = sbx.run_code(code, on_stdout=lambda data: print('stdout:', data))
-    output = ""
-    if len(execution.logs.stdout) > 0:
-        output += "\n".join(execution.logs.stdout)
-    if len(execution.logs.stderr) > 0:
-        output += "\n".join(execution.logs.stderr)
-    if execution.error is not None:
-        output += execution.error.traceback
-    return output, execution
+    else:
+        raise ValueError(f"Unsupported step type: {type(step_log)}")
 
 
-def parse_exec_result_llm(execution):
-    output = ""
-    if len(execution.logs.stdout) > 0:
-        output += "\n".join(execution.logs.stdout)
-    if len(execution.logs.stderr) > 0:
-        output += "\n".join(execution.logs.stderr)
-    if execution.error is not None:
-        output += execution.error.traceback
-    return output
-    
-    
-def update_notebook_display(notebook_data):
-    notebook = nbformat.from_dict(notebook_data)
-    notebook_body, _ = html_exporter.from_notebook_node(notebook)
-    notebook_body = notebook_body.replace(bad_html_bad, "")
-    return notebook_body
+def stream_to_gradio(
+        agent,
+        task: str,
+        reset_agent_memory: bool = False,
+        additional_args: Optional[dict] = None,
+):
+    """Runs an agent with the given task and streams the messages from the agent as gradio ChatMessages."""
+    total_input_tokens = 0
+    total_output_tokens = 0
 
-def run_interactive_notebook(client, model, tokenizer, messages, sbx, max_new_tokens=512):
-    notebook_data, code_cell_counter = create_base_notebook(messages)
-    turns = 0
-    
-    #code_cell_counter = 0
-    while turns <= MAX_TURNS:
-        turns += 1
-        input_tokens = tokenizer.apply_chat_template(
-            messages,
-            chat_template=llama_template,
-            builtin_tools=["code_interpreter"], 
-            add_generation_prompt=True
-        )
-        model_input = tokenizer.decode(input_tokens)
+    for step_log in agent.run(task, stream=True, reset=reset_agent_memory, additional_args=additional_args):
+        # Track tokens if model provides them
+        if getattr(agent.model, "last_input_token_count", None) is not None:
+            total_input_tokens += agent.model.last_input_token_count
+            total_output_tokens += agent.model.last_output_token_count
+            if isinstance(step_log, (ActionStep, PlanningStep)):
+                step_log.input_token_count = agent.model.last_input_token_count
+                step_log.output_token_count = agent.model.last_output_token_count
 
-        print(f"Model input:\n{model_input}\n{'='*80}")
-        
-        response_stream = client.text_generation(
-            model=model,
-            prompt=model_input,
-            details=True,
-            stream=True,
-            do_sample=True,
-            repetition_penalty=1.1,
-            temperature=0.8,
-            max_new_tokens=max_new_tokens,
-        )
-        
-        assistant_response = ""
-        tokens = []
-        
-        code_cell = False
-        for i, chunk in enumerate(response_stream):
-            if not chunk.token.special:
-                content = chunk.token.text
-            else:
-                content = ""
-            tokens.append(chunk.token.text)                
-            assistant_response += content
-
-            if len(tokens)==1:
-                create_cell=True
-                code_cell = "<|python_tag|>" in tokens[0]
-                if code_cell:
-                    code_cell_counter +=1
-            else:
-                create_cell = False
-            
-            # Update notebook in real-time
-            if create_cell:
-                if "<|python_tag|>" in tokens[0]:
-                    notebook_data["cells"].append({
-                        "cell_type": "code",
-                        "execution_count": None,
-                        "metadata": {},
-                        "source": assistant_response,
-                        "outputs": []
-                    })
-                else:
-                    notebook_data["cells"].append({
-                        "cell_type": "markdown",
-                        "metadata": {},
-                        "source": assistant_response
-                    })
-            else:
-                notebook_data["cells"][-1]["source"] = assistant_response
-            if i%16 == 0:
-                yield update_notebook_display(notebook_data), notebook_data, messages
-        yield update_notebook_display(notebook_data), notebook_data, messages
-
-
-        # Handle code execution
-        if code_cell:
-            notebook_data["cells"][-1]["execution_count"] = code_cell_counter
-
-            
-            exec_result, execution = execute_code(sbx, assistant_response)
-            messages.append({
-                "role": "assistant",
-                "content": assistant_response,
-                "tool_calls": [{
-                    "type": "function",
-                    "function": {
-                        "name": "code_interpreter",
-                        "arguments": {"code": assistant_response}
-                    }
-                }]
-            })
-            messages.append({"role": "ipython", "content": parse_exec_result_llm(execution), "nbformat": parse_exec_result_nb(execution)})
-            
-            # Update the last code cell with execution results
-            notebook_data["cells"][-1]["outputs"] = parse_exec_result_nb(execution)
-            update_notebook_display(notebook_data)
-        else:
-            messages.append({"role": "assistant", "content": assistant_response})
-            if tokens[-1] == "<|eot_id|>":
-                break
-    
-    yield update_notebook_display(notebook_data), notebook_data, messages
+        for cell in pull_messages_from_step(step_log):
+            yield cell
