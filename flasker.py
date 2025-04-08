@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, jsonify, Response
 from smolagents import HfApiModel, CodeAgent, PythonInterpreterTool, PromptTemplates, LiteLLMModel, GradioUI, VLLMModel, TransformersModel
 
 # Set the Key
-os.environ["E2B_API_KEY"] = "e2b_290dcb9e4df00219fdeede1d5fc87fb46d903703"
+os.environ["E2B_API_KEY"] = "FILL"
 
 # Create Agent and Model
 model = TransformersModel(

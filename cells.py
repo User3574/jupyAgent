@@ -33,13 +33,15 @@ class Cell:
     def to_string(self) -> str:
         cell_type_name = self.cell_type.name[0].upper() + self.cell_type.name[1:].lower()
 
-        print(self.source)
         # Fix Code Blocks
         output = re.sub(r'(?<!\n)(```[\w]*)', r'\n\1', self.source)
-        if not output.startswith("```python"):
-            output = f"```python\n{output}"
-        if not output.endswith("```"):
-            output = f"{output}\n```"
+
+        # Handle Code Formatting
+        if self.cell_type is CellType.Code:
+            if not output.startswith("```python"):
+                output = f"```python\n{output}"
+            if not output.endswith("```"):
+                output = f"{output}\n```"
 
         # Convert to HTML
         html_output = markdown.markdown(output, extensions=['fenced_code', "codehilite"])
